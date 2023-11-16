@@ -1,46 +1,55 @@
 const express = require('express');
-const FolderRepository = require('./repository/folderRepository');
+const bodyParser = require('body-parser');
+const DirectoryRepository = require('./repository/repository');
 
 const app = express();
 const port = 3000;
 
-const folderRepository = new FolderRepository();
+const directoryRepository = new DirectoryRepository();
 
-app.post('/folders', async (req, res) => {
+app.use(bodyParser.json());
+
+app.post('/directories', async (req, res) => {
   try {
-    const newFolder = await folderRepository.createFolder('New Folder');
+    const directory = req.body;
+
+    console.log(directory);
+
+    const newDirectory = await directoryRepository.createDirectory(directory);
     res.status(201);
-    res.json(newFolder);
+    res.json(newDirectory);
   } catch (error) {
-    console.error('Error retrieving folders', error);
+    console.error('Error retrieving directories', error);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
 
-app.get('/folder', async (req, res) => {
+app.get('/directory', async (req, res) => {
   try {
-    const { name } = req.query;
+    const { id } = req.query;
 
-    if (!name) {
-      return res.status(400).json({ error: 'Name parameter is required' });
+    if (!id) {
+      return res.status(400).json({ error: 'Id parameter is required' });
     }
 
-    const folder = await folderRepository.getFolderByName(name);
+    const directory = await directoryRepository.getDescendantsDirectoryById(id);
     res.status(200);
-    res.json(folder);
+    res.json(directory);
   } catch (error) {
-    console.error('Error retrieving folders', error);
+    console.error('Error retrieving directories', error);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
 
-app.get('/folders', async (req, res) => {
+app.put('/directories', async (req, res) => {
   try {
-    const folders = await folderRepository.getAllFolders();
-    res.status(200);
-    res.json(folders);
+    const { id, permission } = req.body;
+
+    const updatePermission = await directoryRepository.updatePermissionAllDescendants(id, permission);
+    res.status(201);
+    res.json(updatePermission);
   } catch (error) {
-    console.error('Error retrieving folders', error);
+    console.error('Error retrieving directories', error);
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });

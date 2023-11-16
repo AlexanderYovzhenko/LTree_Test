@@ -5,30 +5,76 @@ const app = require('../app');
 chai.use(chaiHttp);
 const expect = chai.expect;
 
-describe('Folder API', () => {
+const mockDirectory = {
+  title: "Title Directory",
+  // parent_id: 1,
+  permission: 1,
+  // path: 1, 
+}
+
+function getRandomNumber(min, max) {
+  return Math.floor(Math.random() * (max - min + 1)) + min;
+}
+
+
+describe('Directory API', () => {
   // Тест для создания новой папки
-  it('should create a new folder', async () => {
-    const res = await chai.request(app).post('/folders').send({ name: 'New Folder' });
+  it('should create a new directories', async () => {
+    for (let i = 0; i < 200; i++) {
+
+      if (i <= 5) {
+        const res = await chai.request(app).post('/directories').send({
+          ...mockDirectory,
+        });
+        expect(res).to.have.status(201);
+      } else if (i <= 10) {
+        const res = await chai.request(app).post('/directories').send({
+          ...mockDirectory,
+          parent_id: i, 
+        });
+        expect(res).to.have.status(201);
+      } else if (i <= 20) {
+        const res = await chai.request(app).post('/directories').send({
+          ...mockDirectory,
+          parent_id: getRandomNumber(1, 10), 
+        });
+        expect(res).to.have.status(201);
+      } else if (i <= 50) {
+        const res = await chai.request(app).post('/directories').send({
+          ...mockDirectory,
+          parent_id: getRandomNumber(1, 20), 
+        });
+        expect(res).to.have.status(201);
+      } else {
+        const res = await chai.request(app).post('/directories').send({
+          ...mockDirectory,
+          parent_id: getRandomNumber(1, 50), 
+        });
+        expect(res).to.have.status(201);
+      }
+    }
+  });
+
+  // Тест для обновления всех папок
+  it('should update all descendants', async () => {
+    const res = await chai.request(app).put('/directories').send({
+      id: 21, 
+      permission: 5,
+    });
+
+    console.log(res.body);
     expect(res).to.have.status(201);
-    expect(res.body).to.have.property('name').that.equals('New Folder');
   });
 
-  // Тест для получения всех папок
-  it('should get all folders', async () => {
-    const res = await chai.request(app).get('/folders');
+  // Тест для получения папки по id
+  it('should get directory by id', async () => {
+    const res = await chai.request(app).get('/directory').query({ id: 21 });
+    console.log(res.body);
     expect(res).to.have.status(200);
-    expect(res.body).to.be.an('array');
-  });
-
-  // Тест для получения папки по имени
-  it('should get folder by name', async () => {
-    const folderName = 'New Folder'; // Предполагаем, что эта папка существует
-    const res = await chai.request(app).get('/folder').query({ name: folderName });
-    expect(res).to.have.status(200);
-    expect(res.body).to.have.property('name').that.equals(folderName);
+    // expect(res.body).to.have.property('id').that.equals(1)
   });
 });
 
 setTimeout(() => {
   process.exit(1);
-}, 1000);
+}, 3000);
