@@ -7,18 +7,15 @@ const expect = chai.expect;
 
 const mockDirectory = {
   title: "Title Directory",
-  // parent_id: 1,
   permission: 1,
-  // path: 1, 
 }
 
 function getRandomNumber(min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-
 describe('Directory API', () => {
-  // Тест для создания новой папки
+  // Тест для создания каталогов
   it('should create a new directories', async () => {
     for (let i = 0; i < 200; i++) {
 
@@ -55,7 +52,7 @@ describe('Directory API', () => {
     }
   });
 
-  // Тест для обновления всех папок
+  // Тест для обновления вложеностей каталога
   it('should update all descendants', async () => {
     const res = await chai.request(app).put('/directories').send({
       id: 21, 
@@ -66,12 +63,11 @@ describe('Directory API', () => {
     expect(res).to.have.status(201);
   });
 
-  // Тест для получения папки по id
+  // Тест для получения всех потомков по id каталога
   it('should get directory by id', async () => {
     const res = await chai.request(app).get('/directory').query({ id: 21 });
     console.log(res.body);
     expect(res).to.have.status(200);
-    // expect(res.body).to.have.property('id').that.equals(1)
   });
 });
 

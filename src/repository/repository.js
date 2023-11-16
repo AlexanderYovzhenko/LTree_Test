@@ -50,6 +50,7 @@ class Repository {
       const ltreePath = await this.#generateLtreePath(directory); 
       console.log(ltreePath);
       const result = await pool.query('INSERT INTO directories (title, parent_id, permission, path) VALUES ($1, $2, $3, $4) RETURNING *', [directory.title, directory.parent_id, directory.permission, ltreePath]);
+      
       return result.rows[0];
     } catch (error) {
       console.error('Error executing SQL query', error);
@@ -60,7 +61,7 @@ class Repository {
   async #generateLtreePath(directory) {
     if (!directory.parent_id) {
       // Если у каталога нет родительского каталога
-      const directoriesFirstLevel =  await this.#getDirectoriesFirstLevel();
+      const directoriesFirstLevel =  await this.#getFirstLevel();
 
       if (directoriesFirstLevel.length) {
         return (directoriesFirstLevel.length + 1).toString();
@@ -70,8 +71,7 @@ class Repository {
     } else {
       // Если есть родительский каталог, формируем путь
       const parent = await this.#getParentDirectory(directory.parent_id);
-
-      const firstLevelDescendants =  await this.#getFirstLevelDescendants(parent.id)
+      const firstLevelDescendants =  await this.#getFirstLevelDescendants(parent.path)
 
       if (firstLevelDescendants.length) {
         return `${parent.path}.${firstLevelDescendants.length + 1}`;
@@ -81,7 +81,7 @@ class Repository {
     }
   }
 
-  async #getDirectoriesFirstLevel() {
+  async #getFirstLevel() {
     try {
       // Запрос для получения всех directories первого уровня
       const result = await pool.query('SELECT * FROM directories WHERE parent_id IS NULL');
@@ -98,10 +98,9 @@ class Repository {
     return result.rows[0];
   }
 
-  async #getFirstLevelDescendants(directoryId) {
+  async #getFirstLevelDescendants(ltreePath) {
     try { 
-      // Запрос на получение прямых потомков
-      const result = await pool.query('SELECT * FROM directories WHERE parent_id = $1', [directoryId]);
+      const result = await pool.query('SELECT * FROM directories WHERE path ~ $1', [`${ltreePath}.*{1}`]);
   
       return result.rows;
     } catch (error) {
@@ -111,10 +110,11 @@ class Repository {
   }
 
   // Get Descendants Directory ----------------------------------
-  async getDescendantsDirectoryById(id) {
+  async getDescendantsDirectoryById(directoryId) {
     try {
-      const result = await pool.query('SELECT * FROM directories WHERE id = $1', [id]);
-      const descendants = await this.#getDescendantsByPath(result.rows[0].path);
+      const directory = await this.#getDirectoryById(directoryId);
+      const descendants = await this.#getDescendantsByPath(directory.path);
+
       return descendants;
     } catch (error) {
       console.error('Error executing SQL query', error);
@@ -125,6 +125,7 @@ class Repository {
   async #getDescendantsByPath(ltreePath) {
     try {
       const result = await pool.query('SELECT * FROM directories WHERE path <@ $1', [ltreePath]);
+
       return result.rows;
     } catch (error) {
       console.error('Error executing SQL query', error);
@@ -143,6 +144,7 @@ class Repository {
         SET permission = $2
         WHERE path <@ $1
     `, [directory.path, newPermission]);
+
       return updateDescendants;
     } catch (error) {
       console.error('Error executing SQL query', error);
@@ -153,6 +155,7 @@ class Repository {
   async #getDirectoryById(directoryId) {
     try {
       const result = await pool.query('SELECT * FROM directories WHERE id = $1', [directoryId]);
+      
       return result.rows[0];
     } catch (error) {
       console.error('Error executing SQL query', error);

@@ -12,10 +12,10 @@ app.use(bodyParser.json());
 app.post('/directories', async (req, res) => {
   try {
     const directory = req.body;
-
     console.log(directory);
 
     const newDirectory = await directoryRepository.createDirectory(directory);
+
     res.status(201);
     res.json(newDirectory);
   } catch (error) {
@@ -33,6 +33,7 @@ app.get('/directory', async (req, res) => {
     }
 
     const directory = await directoryRepository.getDescendantsDirectoryById(id);
+
     res.status(200);
     res.json(directory);
   } catch (error) {
@@ -46,6 +47,7 @@ app.put('/directories', async (req, res) => {
     const { id, permission } = req.body;
 
     const updatePermission = await directoryRepository.updatePermissionAllDescendants(id, permission);
+
     res.status(201);
     res.json(updatePermission);
   } catch (error) {
